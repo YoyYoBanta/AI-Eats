@@ -224,7 +224,7 @@
         <section class="lg:col-span-8 flex flex-col gap-8">
 
           <!-- AI Summary Block (hidden until results arrive) -->
-          <div id="ai-summary" class="hidden relative overflow-hidden rounded-2xl bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-low border border-white/5 p-8 flex items-center gap-6">
+          <div id="ai-summary" class="hidden relative overflow-hidden rounded-2xl bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-low border border-white/5 p-8 items-center gap-6" style="display: none;">
             <div class="absolute right-0 top-0 w-64 h-64 bg-secondary/10 blur-[100px] rounded-full -mr-20 -mt-20"></div>
             <div class="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
               <span class="material-symbols-outlined text-primary text-[40px]">auto_awesome</span>
@@ -245,28 +245,6 @@
             </div>
           </div>
 
-          <!-- Loading Overlay (Initially Hidden) -->
-          <div class="hidden fixed inset-0 z-[100] bg-surface/80 backdrop-blur-sm flex items-center justify-center" id="loading-overlay">
-            <div class="bg-surface-container rounded-3xl p-12 border border-white/10 flex flex-col items-center gap-6 shadow-2xl">
-              <div class="relative w-20 h-20">
-                <div class="absolute inset-0 rounded-full border-4 border-primary/20"></div>
-                <div class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-                <span class="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary text-4xl animate-pulse">restaurant</span>
-              </div>
-              <div class="text-center">
-                <h3 class="font-headline-md text-headline-md text-on-surface">Analyzing Your Palate</h3>
-                <p class="text-on-surface-variant font-body-md">Scanning venues for the perfect match...</p>
-              </div>
-              <div class="w-full flex flex-col gap-4 mt-4">
-                <div class="h-2 w-64 bg-surface-container-highest rounded-full overflow-hidden relative">
-                  <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] animate-[shimmer_1.5s_infinite]"></div>
-                </div>
-                <div class="h-2 w-48 bg-surface-container-highest rounded-full overflow-hidden relative">
-                  <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] animate-[shimmer_1.5s_infinite_0.5s]"></div>
-                </div>
-              </div>
-            </div>
-          </div>
 
         </section>
       </div>
@@ -292,6 +270,29 @@
     </div>
   </footer>
 
+  <!-- ═══════════ Loading Overlay (Top-Level Fixed) ═══════════ -->
+  <div class="fixed inset-0 z-[100] bg-surface/80 backdrop-blur-sm flex items-center justify-center" id="loading-overlay" style="display: none;">
+    <div class="bg-surface-container rounded-3xl p-12 border border-white/10 flex flex-col items-center gap-6 shadow-2xl">
+      <div class="relative w-20 h-20">
+        <div class="absolute inset-0 rounded-full border-4 border-primary/20"></div>
+        <div class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+        <span class="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary text-4xl animate-pulse">restaurant</span>
+      </div>
+      <div class="text-center">
+        <h3 class="font-headline-md text-headline-md text-on-surface">Analyzing Your Palate</h3>
+        <p class="text-on-surface-variant font-body-md">Scanning venues for the perfect match...</p>
+      </div>
+      <div class="w-full flex flex-col gap-4 mt-4">
+        <div class="h-2 w-64 bg-surface-container-highest rounded-full overflow-hidden relative">
+          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] animate-[shimmer_1.5s_infinite]"></div>
+        </div>
+        <div class="h-2 w-48 bg-surface-container-highest rounded-full overflow-hidden relative">
+          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] animate-[shimmer_1.5s_infinite_0.5s]"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══════════ AI Concierge FAB ═══════════ -->
   <div class="fixed bottom-8 right-8 z-50">
     <div class="w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(255,179,176,0.3)] cursor-pointer hover:scale-110 transition-transform">
@@ -304,18 +305,41 @@
     // ── State ──
     let selectedBudget = 'low';
 
-    // ── DOM Elements ──
-    const form = document.getElementById('preference-form');
-    const loadingOverlay = document.getElementById('loading-overlay');
-    const resultsGrid = document.getElementById('results-grid');
-    const aiSummary = document.getElementById('ai-summary');
-    const summaryText = document.getElementById('summary-text');
-    const locationSelect = document.getElementById('location-input');
-    const cuisineSelect = document.getElementById('cuisine-input');
+    // ── Helpers ──
+    function showLoading() {
+      const overlay = document.getElementById('loading-overlay');
+      if (overlay) overlay.style.display = 'flex';
+    }
+    function hideLoading() {
+      const overlay = document.getElementById('loading-overlay');
+      if (overlay) overlay.style.display = 'none';
+    }
+    function showSummary(text) {
+      const el = document.getElementById('ai-summary');
+      const textEl = document.getElementById('summary-text');
+      if (el && textEl) {
+        textEl.textContent = text;
+        el.style.display = 'flex';
+      }
+    }
+    function hideSummary() {
+      const el = document.getElementById('ai-summary');
+      if (el) el.style.display = 'none';
+    }
 
-    // ── Load Locations & Cuisines on Startup ──
+    // ── Initialization (all in DOMContentLoaded) ──
     document.addEventListener('DOMContentLoaded', async () => {
-      // Fetch Locations
+      const form = document.getElementById('preference-form');
+      const resultsGrid = document.getElementById('results-grid');
+      const locationSelect = document.getElementById('location-input');
+      const cuisineSelect = document.getElementById('cuisine-input');
+
+      if (!form || !resultsGrid || !locationSelect || !cuisineSelect) {
+        console.error('AI Eats: Critical DOM elements not found. Page may not render correctly.');
+        return;
+      }
+
+      // ── Load Locations ──
       try {
         const res = await fetch('/api/v1/locations');
         if (!res.ok) throw new Error('API error');
@@ -335,7 +359,7 @@
           defaults.map(loc => `<option value="${loc}">${loc}</option>`).join('');
       }
 
-      // Fetch Cuisines
+      // ── Load Cuisines ──
       try {
         const res = await fetch('/api/v1/cuisines');
         if (!res.ok) throw new Error('API error');
@@ -354,95 +378,101 @@
         cuisineSelect.innerHTML = '<option value="">Any Cuisine</option>' +
           defaults.map(c => `<option value="${c}">${c}</option>`).join('');
       }
-    });
 
-    // ── Micro-interactions ──
-    document.querySelectorAll('input, textarea, select').forEach(el => {
-      el.addEventListener('focus', () => el.parentElement.classList.add('scale-[1.01]'));
-      el.addEventListener('blur', () => el.parentElement.classList.remove('scale-[1.01]'));
-    });
-
-    // ── Budget Segmented Control ──
-    document.querySelectorAll('.budget-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        selectedBudget = btn.getAttribute('data-value');
-        document.querySelectorAll('.budget-btn').forEach(b => {
-          b.classList.remove('bg-primary', 'text-on-primary', 'shadow-lg');
-          b.classList.add('text-on-surface-variant');
+      // ── Micro-interactions ──
+      document.querySelectorAll('input, textarea, select').forEach(el => {
+        el.addEventListener('focus', () => {
+          if (el.parentElement) el.parentElement.classList.add('scale-[1.01]');
         });
-        btn.classList.add('bg-primary', 'text-on-primary', 'shadow-lg');
-        btn.classList.remove('text-on-surface-variant');
+        el.addEventListener('blur', () => {
+          if (el.parentElement) el.parentElement.classList.remove('scale-[1.01]');
+        });
+      });
+
+      // ── Budget Segmented Control ──
+      document.querySelectorAll('.budget-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedBudget = btn.getAttribute('data-value');
+          document.querySelectorAll('.budget-btn').forEach(b => {
+            b.classList.remove('bg-primary', 'text-on-primary', 'shadow-lg');
+            b.classList.add('text-on-surface-variant');
+          });
+          btn.classList.add('bg-primary', 'text-on-primary', 'shadow-lg');
+          btn.classList.remove('text-on-surface-variant');
+        });
+      });
+
+      // ── Form Submission ──
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const location = locationSelect.value;
+        const cuisine = cuisineSelect.value;
+        const ratingInput = document.getElementById('rating-input');
+        const additionalInput = document.getElementById('additional-input');
+        const min_rating = ratingInput ? parseFloat(ratingInput.value) : 0;
+        const additional_preferences = additionalInput ? additionalInput.value : '';
+
+        if (!location) {
+          alert('Please select a location.');
+          return;
+        }
+
+        const payload = {
+          location,
+          budget: selectedBudget,
+          min_rating,
+        };
+        if (cuisine) payload.cuisine = cuisine;
+        if (additional_preferences) payload.additional_preferences = additional_preferences;
+
+        // Show loading overlay
+        showLoading();
+        resultsGrid.innerHTML = '';
+        hideSummary();
+
+        try {
+          const response = await fetch('/api/v1/recommendations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Server error ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          // Show summary
+          if (data.summary) {
+            showSummary(data.summary);
+          }
+
+          renderResults(data.recommendations || [], resultsGrid);
+
+        } catch (err) {
+          console.error('Fetch error:', err);
+          const errMsg = err.message || 'Unknown error';
+          resultsGrid.innerHTML = `
+            <div class="col-span-full p-6 bg-error-container/20 border border-error/20 text-on-surface rounded-2xl flex items-start gap-4">
+              <span class="material-symbols-outlined text-error text-3xl shrink-0 mt-1">error</span>
+              <div>
+                <h4 class="font-headline-md text-error mb-1">Connection Error</h4>
+                <p class="text-on-surface-variant">${errMsg}</p>
+                <p class="text-on-surface-variant mt-2 text-sm">Make sure the backend is running: <code class="bg-surface-container-highest px-2 py-1 rounded">uvicorn main:app --reload</code></p>
+              </div>
+            </div>`;
+        } finally {
+          hideLoading();
+        }
       });
     });
 
-    // ── Form Submission ──
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const location = locationSelect.value;
-      const cuisine = cuisineSelect.value;
-      const min_rating = parseFloat(document.getElementById('rating-input').value);
-      const additional_preferences = document.getElementById('additional-input').value;
-
-      if (!location) {
-        alert('Please select a location.');
-        return;
-      }
-
-      const payload = {
-        location,
-        budget: selectedBudget,
-        min_rating,
-      };
-      if (cuisine) payload.cuisine = cuisine;
-      if (additional_preferences) payload.additional_preferences = additional_preferences;
-
-      // Show loading overlay
-      loadingOverlay.classList.remove('hidden');
-      resultsGrid.innerHTML = '';
-      aiSummary.classList.add('hidden');
-
-      try {
-        const response = await fetch('/api/v1/recommendations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.detail || `Server error ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        // Show summary
-        if (data.summary) {
-          summaryText.textContent = data.summary;
-          aiSummary.classList.remove('hidden');
-        }
-
-        renderResults(data.recommendations || []);
-
-      } catch (err) {
-        console.error('Fetch error:', err);
-        resultsGrid.innerHTML = `
-          <div class="col-span-full p-6 bg-error-container/20 border border-error/20 text-on-surface rounded-2xl flex items-start gap-4">
-            <span class="material-symbols-outlined text-error text-3xl shrink-0 mt-1">error</span>
-            <div>
-              <h4 class="font-headline-md text-error mb-1">Connection Error</h4>
-              <p class="text-on-surface-variant">${err.message}</p>
-              <p class="text-on-surface-variant mt-2 text-sm">Make sure the backend is running: <code class="bg-surface-container-highest px-2 py-1 rounded">uvicorn main:app --reload</code></p>
-            </div>
-          </div>`;
-      } finally {
-        loadingOverlay.classList.add('hidden');
-      }
-    });
-
     // ── Render Results ──
-    function renderResults(recs) {
-      if (recs.length === 0) {
+    function renderResults(recs, resultsGrid) {
+      if (!recs || recs.length === 0) {
         resultsGrid.innerHTML = `
           <div class="col-span-full p-12 text-center flex flex-col items-center justify-center border border-dashed border-white/10 rounded-3xl bg-surface-container/20 min-h-[200px]">
             <span class="material-symbols-outlined text-outline text-5xl mb-4">search_off</span>
@@ -462,9 +492,20 @@
       let html = '';
       recs.forEach((rec, i) => {
         const badgeGradient = badgeColors[i] || 'from-surface-bright to-surface-container-highest';
-        const badgeLabel = badgeLabels[i] || `#${rec.rank}`;
+        const badgeLabel = badgeLabels[i] || `#${rec.rank || i + 1}`;
 
         const costSymbols = rec.budget_tier === 'low' ? '₹' : rec.budget_tier === 'medium' ? '₹₹' : '₹₹₹';
+
+        // Safely handle cuisines — could be array or string
+        const cuisines = Array.isArray(rec.cuisines) ? rec.cuisines : (typeof rec.cuisines === 'string' ? rec.cuisines.split(',').map(c => c.trim()) : []);
+        const cuisineTags = cuisines.map(c => `<span class="bg-surface-container-highest/60 text-on-surface-variant text-label-sm px-2 py-0.5 rounded-full">${c}</span>`).join('');
+
+        // Safely handle optional fields
+        const restaurantName = rec.restaurant_name || 'Unknown Restaurant';
+        const rating = rec.rating != null ? rec.rating : 'N/A';
+        const costForTwo = rec.estimated_cost_for_two != null ? rec.estimated_cost_for_two : '–';
+        const explanation = rec.explanation || 'Recommended based on your preferences.';
+        const address = rec.address || '';
 
         html += `
           <article class="group relative bg-surface-container/40 backdrop-blur-md rounded-2xl overflow-hidden hover:bg-surface-container/60 transition-all duration-500 hover:-translate-y-2 border border-white/5">
@@ -483,15 +524,15 @@
               </div>
 
               <div>
-                <h4 class="font-headline-md text-headline-md text-on-surface">${rec.restaurant_name}</h4>
+                <h4 class="font-headline-md text-headline-md text-on-surface">${restaurantName}</h4>
                 <div class="flex items-center gap-2 mt-1 flex-wrap">
                   <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
-                  <span class="text-on-surface font-bold">${rec.rating}</span>
+                  <span class="text-on-surface font-bold">${rating}</span>
                   <span class="text-outline ml-1 text-sm">${costSymbols}</span>
-                  <span class="text-outline text-sm">• ₹${rec.estimated_cost_for_two} for two</span>
+                  <span class="text-outline text-sm">• ₹${costForTwo} for two</span>
                 </div>
                 <div class="flex flex-wrap gap-1 mt-2">
-                  ${rec.cuisines.map(c => `<span class="bg-surface-container-highest/60 text-on-surface-variant text-label-sm px-2 py-0.5 rounded-full">${c}</span>`).join('')}
+                  ${cuisineTags}
                 </div>
               </div>
 
@@ -501,10 +542,10 @@
                   <span class="material-symbols-outlined text-primary text-sm">auto_awesome</span>
                   <span class="font-label-md text-label-sm text-primary uppercase font-bold">AI Reason</span>
                 </div>
-                <p class="text-on-surface-variant text-label-md italic leading-relaxed">"${rec.explanation}"</p>
+                <p class="text-on-surface-variant text-label-md italic leading-relaxed">"${explanation}"</p>
               </div>
 
-              ${rec.address ? `<p class="text-outline text-label-sm flex items-center gap-1"><span class="material-symbols-outlined text-sm">pin_drop</span> ${rec.address}</p>` : ''}
+              ${address ? `<p class="text-outline text-label-sm flex items-center gap-1"><span class="material-symbols-outlined text-sm">pin_drop</span> ${address}</p>` : ''}
             </div>
           </article>
         `;
