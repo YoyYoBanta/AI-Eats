@@ -63,16 +63,16 @@ class DatasetLoader:
             If the dataset cannot be fetched (network error, invalid name, etc.).
         """
         logger.info(
-            "Loading dataset '%s' (split=%s) from Hugging Face …",
+            "Loading dataset '%s' (split=%s) directly via pandas …",
             self._dataset_name,
             self._split,
         )
         try:
-            ds: Dataset = load_dataset(
-                self._dataset_name,
-                split=self._split,
-            )
-            df = ds.to_pandas()
+            # Construct direct CSV URL to bypass memory-heavy Arrow conversion
+            url = f"hf://datasets/{self._dataset_name}/zomato.csv"
+            
+            df = pd.read_csv(url)
+            
             logger.info(
                 "Dataset loaded: %d rows × %d columns.",
                 len(df),
