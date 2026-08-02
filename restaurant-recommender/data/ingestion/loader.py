@@ -69,9 +69,9 @@ class DatasetLoader:
         )
         try:
             from pathlib import Path
-            # Load local highly-compressed parquet file for instant startup
-            parquet_path = Path(__file__).parent.parent / "zomato.parquet"
-            df = pd.read_parquet(parquet_path)
+            # Load local JSON database for instant startup
+            json_path = Path(__file__).parent.parent / "zomato.json"
+            df = pd.read_json(json_path)
             
             logger.info(
                 "Dataset loaded: %d rows × %d columns.",
