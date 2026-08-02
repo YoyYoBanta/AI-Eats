@@ -68,10 +68,10 @@ class DatasetLoader:
             self._split,
         )
         try:
-            # Construct direct CSV URL to bypass memory-heavy Arrow conversion
-            url = f"hf://datasets/{self._dataset_name}/zomato.csv"
-            
-            df = pd.read_csv(url)
+            from pathlib import Path
+            # Load local highly-compressed parquet file for instant startup
+            parquet_path = Path(__file__).parent.parent / "zomato.parquet"
+            df = pd.read_parquet(parquet_path)
             
             logger.info(
                 "Dataset loaded: %d rows × %d columns.",
