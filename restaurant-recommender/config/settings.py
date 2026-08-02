@@ -55,7 +55,7 @@ class Settings(BaseSettings):
 
     # ── Recommendation Tuning ────────────────────────────────────────────
     MAX_CANDIDATES: int = Field(
-        default=25,
+        default=50,
         ge=1,
         description="Maximum restaurants sent to the LLM context window.",
     )

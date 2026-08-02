@@ -96,52 +96,12 @@ class CandidateSelector:
 
         relaxed: list[str] = []
 
-        # Attempt 1: All filters enabled
         candidates = self.engine.apply_filters(
             base_candidates,
             prefs,
             use_budget=True,
             use_cuisine=True,
             use_rating=True,
-        )
-        if len(candidates) >= self.min_results:
-            return self._finalize(candidates), relaxed
-
-        # Relax 1: Drop cuisine
-        logger.info("Fewer than %d results. Relaxing 'cuisine' filter.", self.min_results)
-        relaxed.append("cuisine")
-        candidates = self.engine.apply_filters(
-            base_candidates,
-            prefs,
-            use_budget=True,
-            use_cuisine=False,
-            use_rating=True,
-        )
-        if len(candidates) >= self.min_results:
-            return self._finalize(candidates), relaxed
-
-        # Relax 2: Drop budget
-        logger.info("Still too few results. Relaxing 'budget' filter.")
-        relaxed.append("budget")
-        candidates = self.engine.apply_filters(
-            base_candidates,
-            prefs,
-            use_budget=False,
-            use_cuisine=False,
-            use_rating=True,
-        )
-        if len(candidates) >= self.min_results:
-            return self._finalize(candidates), relaxed
-
-        # Relax 3: Drop rating (only location remains)
-        logger.info("Still too few results. Relaxing 'min_rating' filter.")
-        relaxed.append("min_rating")
-        candidates = self.engine.apply_filters(
-            base_candidates,
-            prefs,
-            use_budget=False,
-            use_cuisine=False,
-            use_rating=False,
         )
         return self._finalize(candidates), relaxed
 
